@@ -13,3 +13,4 @@ export {
   type ResolvedEngines,
 } from './engines.ts';
 export { buildHealthReport, probeImports, type HealthReport, type EngineHealth } from './health.ts';
+export { assertFreshArtifact, newestSourceMtime, type FreshnessResult } from './freshness.ts';

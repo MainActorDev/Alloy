@@ -14,6 +14,7 @@ import {
   toSettingsOptions,
 } from './adapter-a.ts';
 import { loadEngineBClient, callBTool } from './adapter-b.ts';
+import { assertFreshArtifact } from './freshness.ts';
 import { AlloyError } from './errors.ts';
 import { basename, dirname } from 'node:path';
 
@@ -92,6 +93,7 @@ export function registerPhase0Tools(deps: StubDeps): void {
       action: 'open' | 'install' | 'reinstall' | 'list';
       app?: string;
       path?: string;
+      srcPath?: string;
       launchArgs?: string[];
       udid?: string;
     };
@@ -104,11 +106,17 @@ export function registerPhase0Tools(deps: StubDeps): void {
       const o: { appPath: string; app?: string; udid?: string } = { appPath: d.path! };
       opt(o, 'app', d.app);
       opt(o, 'udid', d.udid);
+      if (d.srcPath !== undefined) {
+        assertFreshArtifact(d.path!, d.srcPath);
+      }
       return client.apps.install(o);
     }
     if (d.action === 'reinstall') {
       const o: { app: string; appPath: string; udid?: string } = { app: d.app!, appPath: d.path! };
       opt(o, 'udid', d.udid);
+      if (d.srcPath !== undefined) {
+        assertFreshArtifact(d.path!, d.srcPath);
+      }
       return client.apps.reinstall(o);
     }
     // open — the lease-holding action; dispatch acquired the held lease already

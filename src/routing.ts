@@ -39,6 +39,11 @@ export const routingTable: readonly RoutingRow[] = [
         app: z.string().min(1).optional().describe('app id / bundle id'),
         launchArgs: z.array(z.string().min(1)).optional().describe('process launch arguments forwarded verbatim'),
         path: z.string().min(1).optional().describe('app binary path for install/reinstall'),
+        srcPath: z
+          .string()
+          .min(1)
+          .optional()
+          .describe('source root for the freshness gate: install refuses with STALE_ARTIFACT if any source file is newer than the artifact'),
         udid: deviceRef.optional(),
       })
       .strict()

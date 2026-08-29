@@ -3,6 +3,9 @@
  * returns the fake's recorded calls. Proves adapter wiring per row without a device.
  */
 import { describe, expect, it, beforeEach } from 'vitest';
+import { mkdtempSync, writeFileSync, utimesSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { clearRegistryForTests, dispatch } from '../src/tools.ts';
 import { LeaseManager } from '../src/lease.ts';
 import { registerPhase0Tools } from '../src/registrations.ts';
@@ -188,3 +191,51 @@ describe('routing table contract (generated)', () => {
     g.capture.snapshot = orig;
   });
 });
+
+describe('freshness gate (Phase 5a, dispatch-level)', () => {
+  it('stale srcPath → STALE_ARTIFACT and the engine never sees install', async () => {
+    const rt = freshRuntime();
+    const srcDir = mkdtempSync(join(tmpdir(), 'alloy-src-'));
+    writeFileSync(join(srcDir, 'Main.swift'), 'let x = 1\n');
+    utimesSync(join(srcDir, 'Main.swift'), T_FUTURE, T_FUTURE); // newer than artifact
+    const art = join(srcDir, 'Old.app');
+    writeFileSync(art, 'bin');
+    utimesSync(art, T_PAST, T_PAST);
+    calls.length = 0;
+    const r = await dispatch(
+      'alloy_apps',
+      { action: 'install', path: art, srcPath: srcDir, app: 'com.example.app', udid: 'SIM-1' },
+      rt.deps,
+    );
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.error.code).toBe('STALE_ARTIFACT');
+      expect(r.error.details?.retriable).toBe(true);
+      expect(r.error.details?.newestSourcePath).toContain('Main.swift');
+    }
+    expect(calls.some((c) => c.method === 'install')).toBe(false); // engine untouched
+    rmSync(srcDir, { recursive: true, force: true });
+  });
+
+  it('fresh srcPath → install proceeds to the engine', async () => {
+    const rt = freshRuntime();
+    const srcDir = mkdtempSync(join(tmpdir(), 'alloy-src-'));
+    writeFileSync(join(srcDir, 'Main.swift'), 'let x = 1\n');
+    utimesSync(join(srcDir, 'Main.swift'), T_PAST, T_PAST); // older than artifact
+    const art = join(srcDir, 'Fresh.app');
+    writeFileSync(art, 'bin');
+    utimesSync(art, T_FUTURE, T_FUTURE);
+    calls.length = 0;
+    const r = await dispatch(
+      'alloy_apps',
+      { action: 'install', path: art, srcPath: srcDir, app: 'com.example.app', udid: 'SIM-1' },
+      rt.deps,
+    );
+    expect(r.ok).toBe(true);
+    expect(calls.some((c) => c.method === 'install')).toBe(true);
+    rmSync(srcDir, { recursive: true, force: true });
+  });
+});
+
+const T_PAST = Date.parse('2026-01-01T00:00:00Z') / 1000;
+const T_FUTURE = Date.parse('2027-01-01T00:00:00Z') / 1000;

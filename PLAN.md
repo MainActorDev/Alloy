@@ -203,6 +203,41 @@ Hermes wrapper + `hermes mcp add alloy`; skill update (routing + arbitration + r
 **Phase 5 — deferred**: Android lane, CI replay, Maestro export, remote/cloud. Revisit
 after dogfood.
 
+**Phase 5a — freshness gate at the build seam (specified Aug 2026, after dogfood demo)**
+
+*Problem (measured in practice, recorded in ios-agentic-testing pitfalls):* the
+build→install seam fails silently — an agent installs a stale `.app` whose mtime
+predates source changes and verifies the wrong binary. Manual mtime checks are the
+current workaround ("xcbuddy STALE-BINARY: verify MTIME > src EVERY build"). This is
+exactly the silent-seam failure class Alloy eliminates elsewhere; the fix is a
+structured gate, not a lane merger (build stays outside Alloy — different aging
+curve, Apple-specific toolchain vs engine-agnostic brand).
+
+*Design:*
+- `alloy_apps` `action:'install'` (and `reinstall`) gains optional `srcPath`.
+- When `srcPath` is present, dispatch walks the source tree (respecting `.gitignore`
+  via a bounded ignore matcher), finds the newest mtime, and compares against the
+  artifact's mtime **before** calling the engine's install.
+- Stale (source newer than artifact) → typed error **`STALE_ARTIFACT`**
+  `{details: {artifactMtime, newestSourceMtime, newestSourcePath, hint: 'rebuild and retry'}}`,
+  retriable: true. Install does NOT run. Fresh → install proceeds.
+- New error code enters `ALLOY_ERROR_CODES`; normalization maps no engine code to it
+  (it is alloy-originated, like `LEASE_HELD`).
+- Scope guard: srcPath walk is bounded (max 20k files, skip node_modules/.build/
+  DerivedData/.git) and errors on unreadable trees rather than silently passing.
+
+*Deliberately NOT in 5a:* auto-rebuild on stale (shelling to a configured build
+command). The gate ships first; automation is a separate decision after dogfood
+evidence (it couples Alloy to build toolchains, the exact coupling §1 avoids).
+
+*Tests:* unit (mtime comparison, ignore-matching, bound) + contract (fake engine
+refuses to see install when stale; sees it when fresh) + live gate
+(`STALE_ARTIFACT` on a touched source file; success after artifact mtime bump).
+
+*Acceptance:* the recorded pitfall's failure mode is impossible through Alloy when
+srcPath is provided — stale installs return a typed error instead of verifying a
+stale binary.
+
 ## 8. Testing & performance
 
 **Tiers, all vitest, tagged for selective runs:**

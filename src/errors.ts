@@ -9,6 +9,7 @@ export const ALLOY_ERROR_CODES = [
   'VALIDATION_FAILED',
   'TOOL_NOT_FOUND',
   'LEASE_HELD',
+  'STALE_ARTIFACT',
   'ENGINE_UNAVAILABLE',
   'ENGINE_SKEWED',
   'CONFIG_MISSING',
@@ -39,6 +40,10 @@ export interface AlloyErrorDetails {
   holder?: string;
   candidates?: AlloyErrorCandidate[];
   engineCode?: string;
+  /** Freshness gate (STALE_ARTIFACT) evidence. */
+  artifactMtime?: number;
+  newestSourceMtime?: number;
+  newestSourcePath?: string;
 }
 
 export interface AlloyErrorShape {
