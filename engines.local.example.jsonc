@@ -1,0 +1,31 @@
+// Engine identities never live in this repo. Each developer (or machine) keeps a
+// local, gitignored resolution file. Copy this template and fill real paths:
+//   cp engines.local.example.jsonc ~/.alloy/engines.local.json
+// or point ALLOY_ENGINES_CONFIG at it.
+//
+// engineA: a device-control engine installed as a package (its own dependency tree).
+//   module        = absolute path to the installed engine package
+//   entry         = import path RELATIVE to `module` where the SDK client is exported
+//   version       = exact version this integration was validated against (pin)
+//   clientFactory = export name of the client factory on the entry module
+// engineB: a tool-registry engine consumed from a built monorepo workspace.
+//   workspace     = absolute path to that monorepo's root
+//   entry         = import path RELATIVE to `workspace` where the tools client is exported
+//   clientFactory = export name of the tools client factory on the entry module
+//   runtimeDir    = absolute path to the engine runtime package dir (server bundle + native helpers)
+//   flowsDirSegments = path segments under the project root where flow YAMLs live
+{
+  "engineA": {
+    "module": "/absolute/path/to/installed/engine-a-package",
+    "entry": "relative/entry.js",
+    "version": "0.0.0",
+    "clientFactory": "nameOfClientFactoryExport"
+  },
+  "engineB": {
+    "workspace": "/absolute/path/to/engine-b-monorepo-root",
+    "entry": "relative/entry.js",
+    "clientFactory": "nameOfToolsClientFactoryExport",
+    "runtimeDir": "/absolute/path/to/engine-b-runtime-package",
+    "flowsDirSegments": [".name", "flows"]
+  }
+}

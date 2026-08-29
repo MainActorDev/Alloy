@@ -1,0 +1,36 @@
+{
+  "name": "alloy",
+  "version": "0.1.0",
+  "description": "Your app. Proven. — one MCP surface routing mobile automation to the strongest engine per task.",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "alloy": "bin/alloy.mjs"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint src test scripts",
+    "scan": "node scripts/scan-signatures.mjs",
+    "test": "vitest run",
+    "test:unit": "vitest run --tag unit",
+    "build": "tsdown",
+    "start": "tsx src/main.ts",
+    "check": "pnpm typecheck && pnpm lint && pnpm scan && pnpm test"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "oxlint": "^1.0.0",
+    "tsdown": "^0.12.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0"
+  }
+}
