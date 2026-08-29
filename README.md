@@ -12,8 +12,12 @@ flows, and validated evidence from the other.
 
 ## Status
 
-Phase 0 (scaffold) — see [PLAN.md](./PLAN.md) for the full architecture, routing
-table, and phase gates. Brand/positioning reference: [BRANDING.md](./BRANDING.md).
+**Phases 0–4 complete — dogfood-ready.** 21 tools, live-verified against both
+engines (unit/contract 53 tests; on-device gates: exploration 8/8, measurement+
+flows+video 10/10, diagnostics 12/12). Facade overhead: median 0.2ms / p95 4.5ms
+vs direct engine calls (budget 15ms). Architecture and phase gates:
+[PLAN.md](./PLAN.md) · Brand: [BRANDING.md](./BRANDING.md) · Bench protocol:
+`scripts/bench.mjs` + `bench/baseline.json`.
 
 ## Quick start
 

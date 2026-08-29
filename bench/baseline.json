@@ -1,0 +1,13 @@
+{
+  "tool": "alloy_measure",
+  "protocol": "paired-interleaved",
+  "pairs": 30,
+  "date": "2026-08-29T11:55:04.863Z",
+  "medianOverheadMs": 0.2,
+  "p95OverheadMs": 4.5,
+  "budget": {
+    "p95OverheadMs": 15
+  },
+  "medianAlloyMs": 71,
+  "medianDirectMs": 71
+}
