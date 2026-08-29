@@ -13,6 +13,13 @@ export interface RoutingRow {
   lease: LeaseMode;
   summary: string;
   schema: z.ZodType<unknown>;
+  /**
+   * Held tools only: predicate on the PARSED input deciding whether THIS call
+   * acquires the lease. Default (absent): every call acquires. Used by
+   * multi-action tools where only one action is genuinely session-holding
+   * (e.g. open) — install/reinstall/list are one-shot and must not hold.
+   */
+  holdsWhen?: (input: Record<string, unknown>) => boolean;
 }
 
 const deviceRef = z
@@ -32,6 +39,7 @@ export const routingTable: readonly RoutingRow[] = [
     tool: 'alloy_apps',
     engine: 'A',
     lease: 'held',
+    holdsWhen: (v) => v['action'] === 'open',
     summary: 'Open an app (with launch args; holds device lease), install, reinstall, or list apps',
     schema: z
       .object({
@@ -191,7 +199,7 @@ export const routingTable: readonly RoutingRow[] = [
   {
     tool: 'alloy_flow',
     engine: 'B',
-    lease: 'held',
+    lease: 'per-call',
     summary: 'Run a declarative flow (E2E verification) with launch-arg preconditions',
     schema: z
       .object({

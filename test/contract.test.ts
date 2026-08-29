@@ -254,8 +254,8 @@ describe('A4: hold:false (session without lease)', () => {
     await dispatch('alloy_apps', { action: 'open', app: 'com.example.app', udid: 'SIM-1', hold: false }, rt.deps);
     const flow = await dispatch('alloy_flow', { udid: 'SIM-1', flowPath: '/tmp/proj/flows/smoke.yaml' }, rt.deps);
     expect(flow.ok).toBe(true);
-    // flow holds the lease now
-    expect(rt.state.leases.snapshot().get('SIM-1')?.holder).toBe('alloy_flow');
+    // flow is per-call: lease auto-released after execution
+    expect(rt.state.leases.snapshot().has('SIM-1')).toBe(false);
   });
   it('default open still acquires (back-compat)', async () => {
     const rt = freshRuntime();
@@ -268,5 +268,21 @@ describe('A4: hold:false (session without lease)', () => {
     const rel = await dispatch('alloy_release', { udid: 'SIM-1' }, rt.deps);
     expect(rel.ok).toBe(true);
     expect(calls.some((c) => c.ns === 'sessions' && c.method === 'close')).toBe(true);
+  });
+});
+
+describe('holdsWhen: only open-style calls hold', () => {
+  it('install does NOT acquire the lease → engine-B flow afterwards is allowed', async () => {
+    const rt = freshRuntime();
+    const inst = await dispatch('alloy_apps', { action: 'install', path: '/tmp/a.app', app: 'x', udid: 'SIM-1' }, rt.deps);
+    expect(inst.ok).toBe(true);
+    expect(rt.state.leases.snapshot().has('SIM-1')).toBe(false);
+    const flow = await dispatch('alloy_flow', { udid: 'SIM-1', flowPath: '/tmp/proj/flows/smoke.yaml' }, rt.deps);
+    expect(flow.ok).toBe(true);
+  });
+  it('open still acquires (default path unchanged)', async () => {
+    const rt = freshRuntime();
+    await dispatch('alloy_apps', { action: 'open', app: 'x', udid: 'SIM-1' }, rt.deps);
+    expect(rt.state.leases.snapshot().get('SIM-1')?.holder).toBe('alloy_apps');
   });
 });

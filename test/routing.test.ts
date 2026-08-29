@@ -26,6 +26,6 @@ describe('routing table invariants (§12.1)', () => {
   });
   it('held tools are exactly the known set', () => {
     const held = routingTable.filter((r) => r.lease === 'held').map((r) => r.tool);
-    expect(held.sort()).toEqual(['alloy_apps', 'alloy_flow', 'alloy_replay']);
+    expect(held.sort()).toEqual(['alloy_apps', 'alloy_replay']);
   });
 });
