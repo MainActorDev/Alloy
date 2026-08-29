@@ -102,14 +102,17 @@ export async function dispatch(
 
   try {
     if (row.lease === 'held') {
-      if (udid) deps.leases.acquireHeld(udid, row.tool, row.engine);
+      // A4: `hold:false` on input opts out of lease acquisition (engine session
+      // only) — powers engine-phased run sequences (open A-session, B drives).
+      const acquired = !(data['hold'] === false);
+      if (acquired && udid) deps.leases.acquireHeld(udid, row.tool, row.engine);
     }
     const result = await handler(data, { engine: row.engine, tool: row.tool });
     return { ok: true, result };
   } catch (err) {
     const alloyErr = toAlloyError(err, row.engine, row.tool);
-    // mandatory release-on-error for held leases
-    if (row.lease === 'held' && udid) deps.leases.releaseHeld(udid, row.tool);
+    // mandatory release-on-error for held leases we actually acquired
+    if (row.lease === 'held' && udid && data['hold'] !== false) deps.leases.releaseHeld(udid, row.tool);
     return { ok: false, error: alloyErr.toJSON() };
   }
 }

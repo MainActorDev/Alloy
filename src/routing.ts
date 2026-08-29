@@ -44,6 +44,10 @@ export const routingTable: readonly RoutingRow[] = [
           .min(1)
           .optional()
           .describe('source root for the freshness gate: install refuses with STALE_ARTIFACT if any source file is newer than the artifact'),
+        hold: z
+          .boolean()
+          .optional()
+          .describe('false = open an engine session WITHOUT acquiring the device lease (session-only; release still closes it). Default true.'),
         udid: deviceRef.optional(),
       })
       .strict()

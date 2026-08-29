@@ -239,3 +239,34 @@ describe('freshness gate (Phase 5a, dispatch-level)', () => {
 
 const T_PAST = Date.parse('2026-01-01T00:00:00Z') / 1000;
 const T_FUTURE = Date.parse('2027-01-01T00:00:00Z') / 1000;
+
+describe('A4: hold:false (session without lease)', () => {
+  it('open with hold:false does NOT acquire the lease', async () => {
+    const rt = freshRuntime();
+    const r = await dispatch('alloy_apps', { action: 'open', app: 'com.example.app', udid: 'SIM-1', hold: false }, rt.deps);
+    expect(r.ok).toBe(true);
+    expect(rt.state.leases.snapshot().has('SIM-1')).toBe(false);
+    // engine open was still called
+    expect(calls.some((c) => c.method === 'open')).toBe(true);
+  });
+  it('open with hold:false then B-flow is allowed (no cross-engine conflict)', async () => {
+    const rt = freshRuntime();
+    await dispatch('alloy_apps', { action: 'open', app: 'com.example.app', udid: 'SIM-1', hold: false }, rt.deps);
+    const flow = await dispatch('alloy_flow', { udid: 'SIM-1', flowPath: '/tmp/proj/flows/smoke.yaml' }, rt.deps);
+    expect(flow.ok).toBe(true);
+    // flow holds the lease now
+    expect(rt.state.leases.snapshot().get('SIM-1')?.holder).toBe('alloy_flow');
+  });
+  it('default open still acquires (back-compat)', async () => {
+    const rt = freshRuntime();
+    await dispatch('alloy_apps', { action: 'open', app: 'com.example.app', udid: 'SIM-1' }, rt.deps);
+    expect(rt.state.leases.snapshot().get('SIM-1')?.holder).toBe('alloy_apps');
+  });
+  it('release closes session even when hold:false', async () => {
+    const rt = freshRuntime();
+    await dispatch('alloy_apps', { action: 'open', app: 'com.example.app', udid: 'SIM-1', hold: false }, rt.deps);
+    const rel = await dispatch('alloy_release', { udid: 'SIM-1' }, rt.deps);
+    expect(rel.ok).toBe(true);
+    expect(calls.some((c) => c.ns === 'sessions' && c.method === 'close')).toBe(true);
+  });
+});

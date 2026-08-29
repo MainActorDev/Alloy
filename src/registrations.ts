@@ -94,6 +94,7 @@ export function registerPhase0Tools(deps: StubDeps): void {
       app?: string;
       path?: string;
       srcPath?: string;
+      hold?: boolean;
       launchArgs?: string[];
       udid?: string;
     };
