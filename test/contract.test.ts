@@ -41,6 +41,7 @@ const VALID_INPUTS: Record<string, unknown> = {
   alloy_apps: { action: 'list' },
   alloy_release: { udid: 'SIM-1' },
   alloy_snapshot: { udid: 'SIM-1' },
+  alloy_screenshot: { udid: 'SIM-1' },
   alloy_act: { udid: 'SIM-1', action: 'press', target: '@e5' },
   alloy_find: { udid: 'SIM-1', by: 'text', value: 'Masuk', action: 'tap' },
   alloy_alert: { udid: 'SIM-1', action: 'accept' },
@@ -284,5 +285,28 @@ describe('holdsWhen: only open-style calls hold', () => {
     const rt = freshRuntime();
     await dispatch('alloy_apps', { action: 'open', app: 'x', udid: 'SIM-1' }, rt.deps);
     expect(rt.state.leases.snapshot().get('SIM-1')?.holder).toBe('alloy_apps');
+  });
+});
+
+describe('M2 gaps: A1 updateBaselines, A2 point targets, screenshot', () => {
+  it('alloy_flow threads updateBaselines to the engine', async () => {
+    const rt = freshRuntime();
+    const r = await dispatch('alloy_flow', { udid: 'SIM-1', flowPath: '/tmp/proj/flows/smoke.yaml', updateBaselines: true }, rt.deps);
+    expect(r.ok).toBe(true);
+    const call = calls.find((c) => c.method === 'flow-execute') as { args: Record<string, unknown> } | undefined;
+    expect(call?.args['updateBaselines']).toBe(true);
+  });
+  it('alloy_act accepts {x,y} point target → engine point target', async () => {
+    const rt = freshRuntime();
+    const r = await dispatch('alloy_act', { udid: 'SIM-1', action: 'press', target: { x: 120, y: 340 }, settle: false }, rt.deps);
+    expect(r.ok).toBe(true);
+    const press = calls.find((c) => c.method === 'press') as { args: { target: { kind: string } } } | undefined;
+    expect(press?.args.target).toEqual({ kind: 'point', x: 120, y: 340 });
+  });
+  it('alloy_screenshot dispatches to engine capture.screenshot', async () => {
+    const rt = freshRuntime();
+    const r = await dispatch('alloy_screenshot', { udid: 'SIM-1' }, rt.deps);
+    expect(r.ok).toBe(true);
+    expect(calls.some((c) => c.method === 'screenshot')).toBe(true);
   });
 });

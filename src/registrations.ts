@@ -161,6 +161,15 @@ export function registerPhase0Tools(deps: StubDeps): void {
     return client.capture.snapshot({ udid: d.udid, interactiveOnly: d.interactiveOnly });
   });
 
+  defineToolFromRow(mustRow('alloy_screenshot'), async (input) => {
+    const client = await loadEngineAClient(requireEngineA(deps).engineA);
+    const d = input as { udid: string; outPath?: string };
+    const o: { udid?: string; outPath?: string } = {};
+    opt(o, 'udid', d.udid);
+    opt(o, 'outPath', d.outPath);
+    return client.capture.screenshot(o);
+  });
+
   defineToolFromRow(mustRow('alloy_act'), async (input) => {
     const client = await loadEngineAClient(requireEngineA(deps).engineA);
     const d = input as {
@@ -174,7 +183,7 @@ export function registerPhase0Tools(deps: StubDeps): void {
     if (d.action === 'scroll') {
       return client.interactions.scroll({ direction: d.direction!, udid: d.udid, settle: d.settle });
     }
-    const target = toTarget(d.target!);
+    const target = toTarget(d.target as string | { x: number; y: number });
     if (d.action === 'press') return client.interactions.press({ target, udid: d.udid, settle: d.settle });
     if (d.action === 'longpress') {
       const o: { target: typeof target; udid?: string } = { target };
@@ -244,7 +253,7 @@ export function registerPhase0Tools(deps: StubDeps): void {
 
   defineToolFromRow(mustRow('alloy_flow'), async (input) => {
     const client = await loadEngineBClient(requireEngineB(deps).engineB);
-    const d = input as { udid: string; flowPath: string };
+    const d = input as { udid: string; flowPath: string; updateBaselines?: boolean };
     const flowName = basename(d.flowPath).replace(/\.ya?ml$/, '');
     // The engine derives the flow file from project_root + configured segments.
     // Strip those segments off the given path to find the project root; refuse
@@ -257,12 +266,14 @@ export function registerPhase0Tools(deps: StubDeps): void {
       }
       dir = dirname(dir);
     }
-    return callBTool(client, 'flow-execute', {
+    const flowArgs: Record<string, unknown> = {
       name: flowName,
       project_root: dir,
       device: d.udid,
       prerequisiteAcknowledged: true,
-    });
+    };
+    if (d.updateBaselines !== undefined) flowArgs['updateBaselines'] = d.updateBaselines;
+    return callBTool(client, 'flow-execute', flowArgs);
   });
 
   defineToolFromRow(mustRow('alloy_video'), async (input) => {

@@ -42,6 +42,7 @@ export interface AClient {
   };
   capture: {
     snapshot(options?: { udid?: string; interactiveOnly?: boolean }): Promise<unknown>;
+    screenshot(options?: { udid?: string; outPath?: string }): Promise<unknown>;
   };
   interactions: {
     press(options: { target: ATarget; udid?: string; settle?: boolean }): Promise<unknown>;
@@ -84,8 +85,9 @@ export async function loadEngineAClient(resolved: ResolvedEngines['engineA']): P
   return client;
 }
 
-/** Map an alloy target string to the engine's structured target (refs keep their @). */
-export function toTarget(raw: string): ATarget {
+/** Map an alloy target to the engine's structured target (refs keep their @). */
+export function toTarget(raw: string | { x: number; y: number }): ATarget {
+  if (typeof raw !== 'string') return { kind: 'point', x: raw.x, y: raw.y };
   if (raw.startsWith('@')) return { kind: 'ref', ref: raw };
   if (/^[a-zA-Z-]+=.+$/.test(raw)) return { kind: 'selector', selector: raw };
   return { kind: 'selector', selector: `text=${JSON.stringify(raw)}` };

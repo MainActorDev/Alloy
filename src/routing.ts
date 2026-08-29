@@ -100,6 +100,18 @@ export const routingTable: readonly RoutingRow[] = [
     schema: z.object({ udid: deviceRef, interactiveOnly: z.boolean().default(true) }).strict(),
   },
   {
+    tool: 'alloy_screenshot',
+    engine: 'A',
+    lease: 'per-call',
+    summary: 'Capture a screenshot PNG of the device screen',
+    schema: z
+      .object({
+        udid: deviceRef,
+        outPath: z.string().min(1).optional().describe('where to save the PNG (engine default temp dir if omitted)'),
+      })
+      .strict(),
+  },
+  {
     tool: 'alloy_act',
     engine: 'A',
     lease: 'per-call',
@@ -108,7 +120,13 @@ export const routingTable: readonly RoutingRow[] = [
       .object({
         udid: deviceRef,
         action: z.enum(['press', 'fill', 'scroll', 'longpress']),
-        target: z.string().min(1).optional().describe('ref (@e12), selector, or label'),
+        target: z
+          .union([
+            z.string().min(1),
+            z.object({ x: z.number().finite(), y: z.number().finite() }),
+          ])
+          .optional()
+          .describe('ref (@e12), selector key=value, label text, or {x,y} point'),
         text: z.string().optional().describe('text for fill'),
         direction: z.enum(['up', 'down', 'left', 'right']).optional(),
         settle: z.boolean().default(true),
@@ -205,6 +223,10 @@ export const routingTable: readonly RoutingRow[] = [
       .object({
         udid: deviceRef,
         flowPath: z.string().min(1).describe('path to the flow YAML file'),
+        updateBaselines: z
+          .boolean()
+          .optional()
+          .describe('write/refresh screenshot baselines for snapshot steps instead of diffing against them'),
       })
       .strict(),
   },

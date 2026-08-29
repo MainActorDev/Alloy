@@ -33,7 +33,10 @@ function fakeClient() {
       close: rec('apps', 'close'),
       push: rec('apps', 'push'),
     },
-    capture: { snapshot: rec('capture', 'snapshot') },
+    capture: {
+      snapshot: rec('capture', 'snapshot'),
+      screenshot: rec('capture', 'screenshot'),
+    },
     interactions: {
       press: rec('interactions', 'press'),
       longPress: rec('interactions', 'longpress'),
