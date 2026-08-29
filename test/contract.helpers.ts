@@ -31,6 +31,7 @@ function fakeClient() {
       reinstall: rec('apps', 'reinstall'),
       list: rec('apps', 'list'),
       close: rec('apps', 'close'),
+      push: rec('apps', 'push'),
     },
     capture: { snapshot: rec('capture', 'snapshot') },
     interactions: {
@@ -43,6 +44,12 @@ function fakeClient() {
     command: { alert: rec('command', 'alert') },
     settings: { update: rec('settings', 'update') },
     sessions: { close: rec('sessions', 'close') },
+    observability: {
+      logs: rec('observability', 'logs'),
+      network: rec('observability', 'network'),
+      perf: rec('observability', 'perf'),
+    },
+    replay: { run: rec('replay', 'run') },
   };
 }
 

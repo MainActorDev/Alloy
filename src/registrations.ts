@@ -291,15 +291,66 @@ export function registerPhase0Tools(deps: StubDeps): void {
     return { note: 'flow-execute returns the full per-step report in its result' };
   });
 
-  // ── Phase 3 stubs ────────────────────────────────────────────────────────
-  const stub = (tool: string, note: string) => {
-    defineToolFromRow(mustRow(tool), async (input) => ({
-      tool,
-      status: 'stub',
-      note,
-      echo: input,
-    }));
-  };
-  stub('alloy_network', 'Phase 3: device engine network dump');
-  stub('alloy_logs', 'Phase 3: device engine logs');
+  // ── Phase 3: diagnostics (engine A) + js runtime (engine B) ──────────────
+  defineToolFromRow(mustRow('alloy_network'), async (input) => {
+    const client = await loadEngineAClient(requireEngineA(deps).engineA);
+    const d = input as { udid: string; limit: number; include?: 'none' | 'headers' | 'bodies' | 'all' };
+    const o: Record<string, unknown> = { action: 'dump', limit: d.limit, udid: d.udid };
+    if (d.include !== undefined) o['include'] = d.include;
+    return client.observability.network(o);
+  });
+
+  defineToolFromRow(mustRow('alloy_logs'), async (input) => {
+    const client = await loadEngineAClient(requireEngineA(deps).engineA);
+    const d = input as {
+      udid: string;
+      action: 'mark' | 'capture' | 'start' | 'stop' | 'clear';
+      message?: string;
+    };
+    const o: Record<string, unknown> = { udid: d.udid };
+    // capture = no action (default read); others map 1:1 to engine actions
+    if (d.action !== 'capture') o['action'] = d.action;
+    if (d.message !== undefined) o['message'] = d.message;
+    return client.observability.logs(o);
+  });
+
+  defineToolFromRow(mustRow('alloy_perf'), async (input) => {
+    const client = await loadEngineAClient(requireEngineA(deps).engineA);
+    const d = input as { udid: string; area: 'frames' | 'memory' | 'cpu' | 'trace'; action: string };
+    return client.observability.perf({ area: d.area, action: d.action, udid: d.udid });
+  });
+
+  defineToolFromRow(mustRow('alloy_push'), async (input) => {
+    const client = await loadEngineAClient(requireEngineA(deps).engineA);
+    const d = input as { udid: string; app: string; payload: Record<string, unknown> };
+    return client.apps.push({ app: d.app, payload: d.payload, udid: d.udid });
+  });
+
+  defineToolFromRow(mustRow('alloy_js_debug'), async (input) => {
+    const client = await loadEngineBClient(requireEngineB(deps).engineB);
+    const d = input as {
+      udid: string;
+      action: 'connect' | 'status' | 'evaluate' | 'component-tree';
+      expression?: string;
+      port: number;
+    };
+    if (d.action === 'connect') return callBTool(client, 'debugger-connect', { device_id: d.udid, port: d.port });
+    if (d.action === 'status') return callBTool(client, 'debugger-status', { device_id: d.udid, port: d.port });
+    if (d.action === 'component-tree') {
+      return callBTool(client, 'debugger-component-tree', { device_id: d.udid, port: d.port });
+    }
+    return callBTool(client, 'debugger-evaluate', {
+      device_id: d.udid,
+      port: d.port,
+      expression: d.expression!,
+    });
+  });
+
+  defineToolFromRow(mustRow('alloy_replay'), async (input) => {
+    const client = await loadEngineAClient(requireEngineA(deps).engineA);
+    const d = input as { udid: string; scriptPath: string; timeoutMs?: number };
+    const o: Record<string, unknown> = { path: d.scriptPath, udid: d.udid };
+    if (d.timeoutMs !== undefined) o['timeoutMs'] = d.timeoutMs;
+    return client.replay.run(o);
+  });
 }

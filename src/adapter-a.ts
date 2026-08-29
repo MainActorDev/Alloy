@@ -38,6 +38,7 @@ export interface AClient {
     reinstall(options: { app: string; appPath: string; udid?: string }): Promise<unknown>;
     list(options?: { udid?: string }): Promise<string[]>;
     close(options?: { shutdown?: boolean }): Promise<unknown>;
+    push(options: { app: string; payload: unknown; udid?: string }): Promise<unknown>;
   };
   capture: {
     snapshot(options?: { udid?: string; interactiveOnly?: boolean }): Promise<unknown>;
@@ -54,6 +55,14 @@ export interface AClient {
   };
   settings: {
     update(options: Record<string, unknown>): Promise<unknown>;
+  };
+  observability: {
+    logs(options?: Record<string, unknown>): Promise<unknown>;
+    network(options?: Record<string, unknown>): Promise<unknown>;
+    perf(options: Record<string, unknown>): Promise<unknown>;
+  };
+  replay: {
+    run(options: Record<string, unknown>): Promise<unknown>;
   };
   sessions: {
     close(options?: { shutdown?: boolean }): Promise<unknown>;

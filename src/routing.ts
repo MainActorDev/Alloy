@@ -242,6 +242,7 @@ export const routingTable: readonly RoutingRow[] = [
       .object({
         udid: deviceRef,
         limit: z.number().int().positive().max(500).default(25),
+        include: z.enum(['none', 'headers', 'bodies', 'all']).optional(),
       })
       .strict(),
   },
@@ -253,8 +254,71 @@ export const routingTable: readonly RoutingRow[] = [
     schema: z
       .object({
         udid: deviceRef,
-        action: z.enum(['mark', 'capture']).default('capture'),
+        action: z.enum(['mark', 'capture', 'start', 'stop', 'clear']).default('capture'),
         message: z.string().optional(),
+      })
+      .strict()
+      .superRefine((v, ctx) => {
+        if (v.action === 'mark' && typeof v.message !== 'string') {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'message is required for mark' });
+        }
+      }),
+  },
+  {
+    tool: 'alloy_perf',
+    engine: 'A',
+    lease: 'per-call',
+    summary: 'Performance evidence: frames, memory, cpu, or trace sampling',
+    schema: z
+      .object({
+        udid: deviceRef,
+        area: z.enum(['frames', 'memory', 'cpu', 'trace']),
+        action: z.enum(['sample', 'snapshot', 'start', 'stop', 'report']).default('sample'),
+      })
+      .strict(),
+  },
+  {
+    tool: 'alloy_push',
+    engine: 'A',
+    lease: 'per-call',
+    summary: 'Deliver a push notification payload to an app',
+    schema: z
+      .object({
+        udid: deviceRef,
+        app: z.string().min(1),
+        payload: z.record(z.unknown()),
+      })
+      .strict(),
+  },
+  {
+    tool: 'alloy_js_debug',
+    engine: 'B',
+    lease: 'per-call',
+    summary: 'JS runtime introspection: connect/status/evaluate/component tree',
+    schema: z
+      .object({
+        udid: deviceRef,
+        action: z.enum(['connect', 'status', 'evaluate', 'component-tree']),
+        expression: z.string().optional(),
+        port: z.number().int().default(8081),
+      })
+      .strict()
+      .superRefine((v, ctx) => {
+        if (v.action === 'evaluate' && typeof v.expression !== 'string') {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'expression required for evaluate' });
+        }
+      }),
+  },
+  {
+    tool: 'alloy_replay',
+    engine: 'A',
+    lease: 'held',
+    summary: 'Replay a recorded session script deterministically',
+    schema: z
+      .object({
+        udid: deviceRef,
+        scriptPath: z.string().min(1),
+        timeoutMs: z.number().int().positive().max(600000).optional(),
       })
       .strict(),
   },

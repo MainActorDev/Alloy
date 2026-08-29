@@ -50,6 +50,10 @@ const VALID_INPUTS: Record<string, unknown> = {
   alloy_flow_report: {},
   alloy_network: { udid: 'SIM-1' },
   alloy_logs: { udid: 'SIM-1', action: 'capture' },
+  alloy_perf: { udid: 'SIM-1', area: 'frames' },
+  alloy_push: { udid: 'SIM-1', app: 'com.example.app', payload: { aps: { alert: 'hi' } } },
+  alloy_js_debug: { udid: 'SIM-1', action: 'status' },
+  alloy_replay: { udid: 'SIM-1', scriptPath: '/tmp/session.ad' },
 };
 
 describe('routing table contract (generated)', () => {
