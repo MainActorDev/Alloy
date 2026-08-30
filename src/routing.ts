@@ -100,6 +100,13 @@ export const routingTable: readonly RoutingRow[] = [
     schema: z.object({ udid: deviceRef, interactiveOnly: z.boolean().default(true) }).strict(),
   },
   {
+    tool: 'alloy_stream',
+    engine: 'B',
+    lease: 'per-call',
+    summary: 'Live MJPEG screen-stream URL for a booted simulator (watch = read-only, no lease)',
+    schema: z.object({ udid: deviceRef }).strict(),
+  },
+  {
     tool: 'alloy_screenshot',
     engine: 'A',
     lease: 'per-call',

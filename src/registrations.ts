@@ -161,6 +161,12 @@ export function registerPhase0Tools(deps: StubDeps): void {
     return client.capture.snapshot({ udid: d.udid, interactiveOnly: d.interactiveOnly });
   });
 
+  defineToolFromRow(mustRow('alloy_stream'), async (input) => {
+    const client = await loadEngineBClient(requireEngineB(deps).engineB);
+    const d = input as { udid: string };
+    return callBTool(client, 'simulator-stream', { udid: d.udid });
+  });
+
   defineToolFromRow(mustRow('alloy_screenshot'), async (input) => {
     const client = await loadEngineAClient(requireEngineA(deps).engineA);
     const d = input as { udid: string; outPath?: string };

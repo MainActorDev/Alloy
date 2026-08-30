@@ -41,6 +41,7 @@ const VALID_INPUTS: Record<string, unknown> = {
   alloy_apps: { action: 'list' },
   alloy_release: { udid: 'SIM-1' },
   alloy_snapshot: { udid: 'SIM-1' },
+  alloy_stream: { udid: 'SIM-1' },
   alloy_screenshot: { udid: 'SIM-1' },
   alloy_act: { udid: 'SIM-1', action: 'press', target: '@e5' },
   alloy_find: { udid: 'SIM-1', by: 'text', value: 'Masuk', action: 'tap' },
