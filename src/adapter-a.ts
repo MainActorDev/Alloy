@@ -129,3 +129,10 @@ export function toSettingsOptions(
 export function resetEngineACacheForTests(): void {
   cached = null;
 }
+
+/** Production seam (see resetEngineBCache): drop the cached engine-A client so
+ * the next loadEngineAClient() re-creates it — same stale-handle recovery class
+ * as engine B. */
+export function resetEngineACache(): void {
+  cached = null;
+}

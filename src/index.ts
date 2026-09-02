@@ -15,3 +15,5 @@ export {
 export { buildHealthReport, probeImports, type HealthReport, type EngineHealth } from './health.ts';
 export { assertFreshArtifact, newestSourceMtime, type FreshnessResult } from './freshness.ts';
 export { registerPhase0Tools } from './registrations.ts';
+export { resetEngineACache } from './adapter-a.ts';
+export { resetEngineBCache } from './adapter-b.ts';

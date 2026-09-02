@@ -98,3 +98,12 @@ function envelopeToAlloyError(err: unknown, context: string): AlloyError {
 export function resetEngineBCacheForTests(): void {
   cached = null;
 }
+
+/** Production seam for consumers (Crucible): drop the cached engine-B client so
+ * the next loadEngineBClient() call re-creates it. A fresh client re-runs
+ * ensureToolsServer(), which sees the dead pid in the state file and RESPAWNS
+ * tool-server — recovering from the idle-shutdown/stale-handle failure class
+ * without a consumer restart. */
+export function resetEngineBCache(): void {
+  cached = null;
+}
