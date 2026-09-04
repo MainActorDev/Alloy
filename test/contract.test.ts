@@ -126,6 +126,17 @@ describe('routing table contract (generated)', () => {
     expect(open.foreground).toBe(true);
   });
 
+  it('per-device engine sessions: two udid dispatches create two named sessions', async () => {
+    const rt = freshRuntime();
+    (globalThis as Record<string, unknown>)['__alloySessions'] = [];
+    await dispatch('alloy_apps', { action: 'open', app: 'com.example.app', udid: 'SIM-AAAAAAAA-1' }, rt.deps);
+    await dispatch('alloy_apps', { action: 'open', app: 'com.example.app', udid: 'SIM-BBBBBBBB-2' }, rt.deps);
+    const sessions = (globalThis as Record<string, unknown>)['__alloySessions'] as string[];
+    expect(sessions).toContain('alloy-simaaaaa');
+    expect(sessions).toContain('alloy-simbbbbb');
+    expect(new Set(sessions).size).toBe(2);
+  });
+
   it('open acquires held lease; release clears it and closes engine session', async () => {
     const rt = freshRuntime();
     await dispatch(

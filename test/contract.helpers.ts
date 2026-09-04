@@ -85,7 +85,7 @@ export function fakeEngineAClient() {
 export function makeFakeResolvedEngines(): ResolvedEngines {
   const dir = mkdtempSync(join(tmpdir(), 'alloy-fake-'));
   mkdirSync(join(dir, 'node_modules'));
-  writeFileSync(join(dir, 'entry-a.mjs'), `export function createClient() { return globalThis.__alloyFakeA; }\n`);
+  writeFileSync(join(dir, 'entry-a.mjs'), `export function createClient(cfg) { (globalThis.__alloySessions ??= []).push(cfg?.session); return globalThis.__alloyFakeA; }\n`);
   writeFileSync(join(dir, 'entry-b.mjs'), `export function createClient() { return globalThis.__alloyFakeB; }\n`);
   writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'fake-engine', version: '1.0.0' }));
   return {
