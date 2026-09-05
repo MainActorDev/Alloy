@@ -242,7 +242,13 @@ export function registerPhase0Tools(deps: StubDeps): void {
     return callBTool(client, 'describe', { udid: d.udid });
   });
 
-  defineToolFromRow(mustRow('alloy_native_tree'), async (input) => {
+  defineToolFromRow(mustRow('alloy_restart_app'), async (input) => {
+    const client = await loadEngineBClient(requireEngineB(deps).engineB);
+    const d = input as { udid: string; bundleId: string };
+    return callBTool(client, 'restart-app', { udid: d.udid, bundleId: d.bundleId });
+  });
+
+defineToolFromRow(mustRow('alloy_native_tree'), async (input) => {
     const client = await loadEngineBClient(requireEngineB(deps).engineB);
     const d = input as {
       udid: string;
@@ -251,6 +257,9 @@ export function registerPhase0Tools(deps: StubDeps): void {
       id?: string;
       x?: number;
       y?: number;
+      /** interactable-at: engine B requires the app's bundle id (precheck
+       *  gate + view-space mapping). find-views ignores it. */
+      bundleId?: string;
     };
     if (d.query === 'hierarchy') {
       return callBTool(client, 'native-full-hierarchy', { udid: d.udid });
@@ -262,6 +271,7 @@ export function registerPhase0Tools(deps: StubDeps): void {
     }
     return callBTool(client, 'native-user-interactable-view-at-point', {
       udid: d.udid,
+      bundleId: d.bundleId!,
       x: d.x!,
       y: d.y!,
     });
