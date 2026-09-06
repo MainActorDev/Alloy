@@ -23,7 +23,7 @@ export interface ADevice {
 export interface AClient {
   devices: {
     list(options?: { udid?: string }): Promise<ADevice[]>;
-    boot(options?: { udid?: string }): Promise<unknown>;
+    boot(options?: { udid?: string; headless?: boolean }): Promise<unknown>;
     shutdown(options?: { udid?: string }): Promise<unknown>;
   };
   apps: {

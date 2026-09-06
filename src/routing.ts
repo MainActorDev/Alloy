@@ -77,6 +77,7 @@ export const routingTable: readonly RoutingRow[] = [
       .object({
         action: z.enum(['list', 'boot', 'shutdown']).default('list'),
         udid: deviceRef.optional(),
+        headless: z.boolean().optional(),
       })
       .strict()
       .superRefine((v, ctx) => {

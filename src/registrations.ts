@@ -77,11 +77,12 @@ export function registerPhase0Tools(deps: StubDeps): void {
   defineToolFromRow(mustRow('alloy_devices'), async (input) => {
     const d0 = input as { udid?: string };
     const client = await loadEngineAClient(requireEngineA(deps).engineA, sessionForUdid(d0.udid));
-    const d = input as { action: 'list' | 'boot' | 'shutdown'; udid?: string };
+    const d = input as { action: 'list' | 'boot' | 'shutdown'; udid?: string; headless?: boolean };
     if (d.action === 'list') return client.devices.list();
     if (d.action === 'boot') {
-      const o: { udid?: string } = {};
+      const o: { udid?: string; headless?: boolean } = {};
       opt(o, 'udid', d.udid);
+      opt(o, 'headless', d.headless);
       return client.devices.boot(o);
     }
     const o: { udid?: string } = {};
