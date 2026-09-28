@@ -188,12 +188,13 @@ export function registerPhase0Tools(deps: StubDeps): void {
     const client = await loadEngineAClient(requireEngineA(deps).engineA, sessionForUdid(d0.udid));
     const d = input as {
       udid: string;
-      action: 'press' | 'fill' | 'scroll' | 'longpress';
+      action: 'press' | 'fill' | 'scroll' | 'longpress' | 'keyboardDismiss';
       target?: string;
       text?: string;
       direction?: 'up' | 'down' | 'left' | 'right';
       settle: boolean;
     };
+    if (d.action === 'keyboardDismiss') return client.interactions.keyboardDismiss({ udid: d.udid });
     if (d.action === 'scroll') {
       return client.interactions.scroll({ direction: d.direction!, udid: d.udid, settle: d.settle });
     }

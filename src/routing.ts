@@ -130,11 +130,14 @@ export const routingTable: readonly RoutingRow[] = [
     tool: 'alloy_act',
     engine: 'A',
     lease: 'per-call',
+    // Lionidas mirror: server/src/manual/alloy-act-contract.test.ts pins this
+    // verb set (mirror + live-schema tiers). Changing actions/fields here?
+    // Update that mirror in the same change.
     summary: 'Press, click, fill, scroll, or long-press with post-action settle diff',
     schema: z
       .object({
         udid: deviceRef,
-        action: z.enum(['press', 'fill', 'scroll', 'longpress']),
+        action: z.enum(['press', 'fill', 'scroll', 'longpress', 'keyboardDismiss']),
         target: z
           .union([
             z.string().min(1),
@@ -154,8 +157,8 @@ export const routingTable: readonly RoutingRow[] = [
         if (v.action === 'scroll' && !v.direction) {
           ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'direction is required for scroll' });
         }
-        if (v.action !== 'scroll' && !v.target) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'target is required unless action=scroll' });
+        if (v.action !== 'scroll' && v.action !== 'keyboardDismiss' && !v.target) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'target is required unless action=scroll or keyboardDismiss' });
         }
       }),
   },
