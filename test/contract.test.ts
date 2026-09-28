@@ -40,6 +40,7 @@ const VALID_INPUTS: Record<string, unknown> = {
   alloy_devices: { action: 'list' },
   alloy_apps: { action: 'list' },
   alloy_release: { udid: 'SIM-1' },
+  alloy_restart_app: { udid: 'SIM-1', bundleId: 'com.example.app' },
   alloy_snapshot: { udid: 'SIM-1' },
   alloy_stream: { udid: 'SIM-1' },
   alloy_screenshot: { udid: 'SIM-1' },
