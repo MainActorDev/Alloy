@@ -23,7 +23,7 @@ export interface ADevice {
 export interface AClient {
   devices: {
     list(options?: { udid?: string }): Promise<ADevice[]>;
-    boot(options?: { udid?: string }): Promise<unknown>;
+    boot(options?: { udid?: string; headless?: boolean }): Promise<unknown>;
     shutdown(options?: { udid?: string }): Promise<unknown>;
   };
   apps: {
@@ -48,6 +48,8 @@ export interface AClient {
     press(options: { target: ATarget; udid?: string; settle?: boolean }): Promise<unknown>;
     longPress(options: { target: ATarget; udid?: string; durationMs?: number }): Promise<unknown>;
     fill(options: { target: ATarget; text: string; udid?: string; settle?: boolean }): Promise<unknown>;
+    /** Hide the on-screen keyboard (engine-backed, device-independent). */
+    keyboardDismiss(options: { udid?: string }): Promise<unknown>;
     scroll(options: { direction: string; udid?: string; settle?: boolean }): Promise<unknown>;
     find(options: { query: string; action?: string; value?: string; first?: boolean; udid?: string }): Promise<unknown>;
   };
@@ -70,18 +72,30 @@ export interface AClient {
   };
 }
 
-let cached: { key: string; client: AClient } | null = null;
+/** One client per (engine, session) — the engine binds a session NAME to one
+ *  device; a shared 'alloy' session made any cross-device sequence collide
+ *  ("is owned by session alloy"). Per-device sessions (`alloy-<udid8>`) give
+ *  each device its own session + claim; DEVICE-SCOPED tools pass d.udid,
+ *  device-agnostic ones (list/health) use the bare 'alloy' default. */
+const clients = new Map<string, AClient>();
 
-export async function loadEngineAClient(resolved: ResolvedEngines['engineA']): Promise<AClient> {
-  if (cached && cached.key === resolved.importUrl) return cached.client;
+export function sessionForUdid(udid: string | undefined): string {
+  if (!udid) return 'alloy';
+  return `alloy-${udid.replace(/-/g, '').slice(0, 8).toLowerCase()}`;
+}
+
+export async function loadEngineAClient(resolved: ResolvedEngines['engineA'], session = 'alloy'): Promise<AClient> {
+  const key = `${resolved.importUrl}::${session}`;
+  const cached = clients.get(key);
+  if (cached) return cached;
   const mod = (await import(resolved.importUrl)) as Record<string, unknown>;
   const factoryName = resolved.clientFactory ?? 'createClient';
   const factory = mod[factoryName];
   if (typeof factory !== 'function') {
     throw new AlloyError('ENGINE_UNAVAILABLE', 'engine A client factory missing at configured entry', { engine: 'A' });
   }
-  const client = (factory as (config?: { session?: string }) => AClient)({ session: 'alloy' });
-  cached = { key: resolved.importUrl, client };
+  const client = (factory as (config?: { session?: string }) => AClient)({ session });
+  clients.set(key, client);
   return client;
 }
 
@@ -127,12 +141,12 @@ export function toSettingsOptions(
 }
 
 export function resetEngineACacheForTests(): void {
-  cached = null;
+  clients.clear();
 }
 
 /** Production seam (see resetEngineBCache): drop the cached engine-A client so
  * the next loadEngineAClient() re-creates it — same stale-handle recovery class
  * as engine B. */
 export function resetEngineACache(): void {
-  cached = null;
+  clients.clear();
 }

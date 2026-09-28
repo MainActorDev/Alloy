@@ -77,6 +77,7 @@ export const routingTable: readonly RoutingRow[] = [
       .object({
         action: z.enum(['list', 'boot', 'shutdown']).default('list'),
         udid: deviceRef.optional(),
+        headless: z.boolean().optional(),
       })
       .strict()
       .superRefine((v, ctx) => {
@@ -91,6 +92,13 @@ export const routingTable: readonly RoutingRow[] = [
     lease: 'per-call',
     summary: 'Release a held device lease and end the engine session on it',
     schema: z.object({ udid: deviceRef }).strict(),
+  },
+  {
+    tool: 'alloy_restart_app',
+    engine: 'B',
+    lease: 'per-call',
+    summary: 'Restart app with native-devtools dylib injected (engine B restart-app)',
+    schema: z.object({ udid: deviceRef, bundleId: z.string().min(1) }).strict(),
   },
   {
     tool: 'alloy_snapshot',
@@ -122,11 +130,14 @@ export const routingTable: readonly RoutingRow[] = [
     tool: 'alloy_act',
     engine: 'A',
     lease: 'per-call',
+    // Lionidas mirror: server/src/manual/alloy-act-contract.test.ts pins this
+    // verb set (mirror + live-schema tiers). Changing actions/fields here?
+    // Update that mirror in the same change.
     summary: 'Press, click, fill, scroll, or long-press with post-action settle diff',
     schema: z
       .object({
         udid: deviceRef,
-        action: z.enum(['press', 'fill', 'scroll', 'longpress']),
+        action: z.enum(['press', 'fill', 'scroll', 'longpress', 'keyboardDismiss']),
         target: z
           .union([
             z.string().min(1),
@@ -146,8 +157,8 @@ export const routingTable: readonly RoutingRow[] = [
         if (v.action === 'scroll' && !v.direction) {
           ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'direction is required for scroll' });
         }
-        if (v.action !== 'scroll' && !v.target) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'target is required unless action=scroll' });
+        if (v.action !== 'scroll' && v.action !== 'keyboardDismiss' && !v.target) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'target is required unless action=scroll or keyboardDismiss' });
         }
       }),
   },
@@ -210,9 +221,14 @@ export const routingTable: readonly RoutingRow[] = [
         id: z.string().min(1).optional(),
         x: z.number().finite().optional(),
         y: z.number().finite().optional(),
+        bundleId: z.string().min(1).optional(),
       })
       .strict()
       .superRefine((v, ctx) => {
+        if (v.query === 'interactable-at') {
+          if (v.x === undefined || v.y === undefined) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'x and y required for interactable-at' });
+          if (!v.bundleId) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'bundleId required for interactable-at' });
+        }
         if (v.query === 'find-views' && !v.className && !v.id) {
           ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'className or id required for find-views' });
         }

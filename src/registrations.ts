@@ -8,6 +8,7 @@ import { buildHealthReport, probeImports, type HealthReport } from './health.ts'
 import type { ServerState } from './server.ts';
 import {
   loadEngineAClient,
+  sessionForUdid,
   toTarget,
   toFindQuery,
   toAlertAction,
@@ -74,12 +75,14 @@ export function registerPhase0Tools(deps: StubDeps): void {
 
   // ── engine A surface (Phase 1) ───────────────────────────────────────────
   defineToolFromRow(mustRow('alloy_devices'), async (input) => {
-    const client = await loadEngineAClient(requireEngineA(deps).engineA);
-    const d = input as { action: 'list' | 'boot' | 'shutdown'; udid?: string };
+    const d0 = input as { udid?: string };
+    const client = await loadEngineAClient(requireEngineA(deps).engineA, sessionForUdid(d0.udid));
+    const d = input as { action: 'list' | 'boot' | 'shutdown'; udid?: string; headless?: boolean };
     if (d.action === 'list') return client.devices.list();
     if (d.action === 'boot') {
-      const o: { udid?: string } = {};
+      const o: { udid?: string; headless?: boolean } = {};
       opt(o, 'udid', d.udid);
+      opt(o, 'headless', d.headless);
       return client.devices.boot(o);
     }
     const o: { udid?: string } = {};
@@ -88,7 +91,8 @@ export function registerPhase0Tools(deps: StubDeps): void {
   });
 
   defineToolFromRow(mustRow('alloy_apps'), async (input) => {
-    const client = await loadEngineAClient(requireEngineA(deps).engineA);
+    const d0 = input as { udid?: string };
+    const client = await loadEngineAClient(requireEngineA(deps).engineA, sessionForUdid(d0.udid));
     const d = input as {
       action: 'open' | 'install' | 'reinstall' | 'list';
       app?: string;
@@ -140,7 +144,8 @@ export function registerPhase0Tools(deps: StubDeps): void {
   });
 
   defineToolFromRow(mustRow('alloy_release'), async (input) => {
-    const client = await loadEngineAClient(requireEngineA(deps).engineA);
+    const d0 = input as { udid?: string };
+    const client = await loadEngineAClient(requireEngineA(deps).engineA, sessionForUdid(d0.udid));
     const d = input as { udid: string };
     // Release engine session (SESSION_NOT_FOUND means nothing to close — not an error)
     try {
@@ -156,7 +161,8 @@ export function registerPhase0Tools(deps: StubDeps): void {
   });
 
   defineToolFromRow(mustRow('alloy_snapshot'), async (input) => {
-    const client = await loadEngineAClient(requireEngineA(deps).engineA);
+    const d0 = input as { udid?: string };
+    const client = await loadEngineAClient(requireEngineA(deps).engineA, sessionForUdid(d0.udid));
     const d = input as { udid: string; interactiveOnly: boolean };
     return client.capture.snapshot({ udid: d.udid, interactiveOnly: d.interactiveOnly });
   });
@@ -168,7 +174,8 @@ export function registerPhase0Tools(deps: StubDeps): void {
   });
 
   defineToolFromRow(mustRow('alloy_screenshot'), async (input) => {
-    const client = await loadEngineAClient(requireEngineA(deps).engineA);
+    const d0 = input as { udid?: string };
+    const client = await loadEngineAClient(requireEngineA(deps).engineA, sessionForUdid(d0.udid));
     const d = input as { udid: string; outPath?: string };
     const o: { udid?: string; outPath?: string } = {};
     opt(o, 'udid', d.udid);
@@ -177,15 +184,17 @@ export function registerPhase0Tools(deps: StubDeps): void {
   });
 
   defineToolFromRow(mustRow('alloy_act'), async (input) => {
-    const client = await loadEngineAClient(requireEngineA(deps).engineA);
+    const d0 = input as { udid?: string };
+    const client = await loadEngineAClient(requireEngineA(deps).engineA, sessionForUdid(d0.udid));
     const d = input as {
       udid: string;
-      action: 'press' | 'fill' | 'scroll' | 'longpress';
+      action: 'press' | 'fill' | 'scroll' | 'longpress' | 'keyboardDismiss';
       target?: string;
       text?: string;
       direction?: 'up' | 'down' | 'left' | 'right';
       settle: boolean;
     };
+    if (d.action === 'keyboardDismiss') return client.interactions.keyboardDismiss({ udid: d.udid });
     if (d.action === 'scroll') {
       return client.interactions.scroll({ direction: d.direction!, udid: d.udid, settle: d.settle });
     }
@@ -200,7 +209,8 @@ export function registerPhase0Tools(deps: StubDeps): void {
   });
 
   defineToolFromRow(mustRow('alloy_find'), async (input) => {
-    const client = await loadEngineAClient(requireEngineA(deps).engineA);
+    const d0 = input as { udid?: string };
+    const client = await loadEngineAClient(requireEngineA(deps).engineA, sessionForUdid(d0.udid));
     const d = input as { udid: string; by: 'text' | 'label' | 'role' | 'id'; value: string; action: 'none' | 'tap' };
     const o: Record<string, unknown> = {
       query: toFindQuery(d.by, d.value),
@@ -212,13 +222,15 @@ export function registerPhase0Tools(deps: StubDeps): void {
   });
 
   defineToolFromRow(mustRow('alloy_alert'), async (input) => {
-    const client = await loadEngineAClient(requireEngineA(deps).engineA);
+    const d0 = input as { udid?: string };
+    const client = await loadEngineAClient(requireEngineA(deps).engineA, sessionForUdid(d0.udid));
     const d = input as { udid: string; action: 'inspect' | 'accept' | 'dismiss' };
     return client.command.alert({ action: toAlertAction(d.action), udid: d.udid });
   });
 
   defineToolFromRow(mustRow('alloy_settings'), async (input) => {
-    const client = await loadEngineAClient(requireEngineA(deps).engineA);
+    const d0 = input as { udid?: string };
+    const client = await loadEngineAClient(requireEngineA(deps).engineA, sessionForUdid(d0.udid));
     const d = input as { udid: string; area: string; values?: Record<string, string> };
     return client.settings.update(toSettingsOptions(d.area, d.values, d.udid));
   });
@@ -232,7 +244,13 @@ export function registerPhase0Tools(deps: StubDeps): void {
     return callBTool(client, 'describe', { udid: d.udid });
   });
 
-  defineToolFromRow(mustRow('alloy_native_tree'), async (input) => {
+  defineToolFromRow(mustRow('alloy_restart_app'), async (input) => {
+    const client = await loadEngineBClient(requireEngineB(deps).engineB);
+    const d = input as { udid: string; bundleId: string };
+    return callBTool(client, 'restart-app', { udid: d.udid, bundleId: d.bundleId });
+  });
+
+defineToolFromRow(mustRow('alloy_native_tree'), async (input) => {
     const client = await loadEngineBClient(requireEngineB(deps).engineB);
     const d = input as {
       udid: string;
@@ -241,6 +259,9 @@ export function registerPhase0Tools(deps: StubDeps): void {
       id?: string;
       x?: number;
       y?: number;
+      /** interactable-at: engine B requires the app's bundle id (precheck
+       *  gate + view-space mapping). find-views ignores it. */
+      bundleId?: string;
     };
     if (d.query === 'hierarchy') {
       return callBTool(client, 'native-full-hierarchy', { udid: d.udid });
@@ -252,6 +273,7 @@ export function registerPhase0Tools(deps: StubDeps): void {
     }
     return callBTool(client, 'native-user-interactable-view-at-point', {
       udid: d.udid,
+      bundleId: d.bundleId!,
       x: d.x!,
       y: d.y!,
     });
@@ -319,7 +341,8 @@ export function registerPhase0Tools(deps: StubDeps): void {
 
   // ── Phase 3: diagnostics (engine A) + js runtime (engine B) ──────────────
   defineToolFromRow(mustRow('alloy_network'), async (input) => {
-    const client = await loadEngineAClient(requireEngineA(deps).engineA);
+    const d0 = input as { udid?: string };
+    const client = await loadEngineAClient(requireEngineA(deps).engineA, sessionForUdid(d0.udid));
     const d = input as { udid: string; limit: number; include?: 'none' | 'headers' | 'bodies' | 'all' };
     const o: Record<string, unknown> = { action: 'dump', limit: d.limit, udid: d.udid };
     if (d.include !== undefined) o['include'] = d.include;
@@ -327,7 +350,8 @@ export function registerPhase0Tools(deps: StubDeps): void {
   });
 
   defineToolFromRow(mustRow('alloy_logs'), async (input) => {
-    const client = await loadEngineAClient(requireEngineA(deps).engineA);
+    const d0 = input as { udid?: string };
+    const client = await loadEngineAClient(requireEngineA(deps).engineA, sessionForUdid(d0.udid));
     const d = input as {
       udid: string;
       action: 'mark' | 'capture' | 'start' | 'stop' | 'clear';
@@ -341,13 +365,15 @@ export function registerPhase0Tools(deps: StubDeps): void {
   });
 
   defineToolFromRow(mustRow('alloy_perf'), async (input) => {
-    const client = await loadEngineAClient(requireEngineA(deps).engineA);
+    const d0 = input as { udid?: string };
+    const client = await loadEngineAClient(requireEngineA(deps).engineA, sessionForUdid(d0.udid));
     const d = input as { udid: string; area: 'frames' | 'memory' | 'cpu' | 'trace'; action: string };
     return client.observability.perf({ area: d.area, action: d.action, udid: d.udid });
   });
 
   defineToolFromRow(mustRow('alloy_push'), async (input) => {
-    const client = await loadEngineAClient(requireEngineA(deps).engineA);
+    const d0 = input as { udid?: string };
+    const client = await loadEngineAClient(requireEngineA(deps).engineA, sessionForUdid(d0.udid));
     const d = input as { udid: string; app: string; payload: Record<string, unknown> };
     return client.apps.push({ app: d.app, payload: d.payload, udid: d.udid });
   });
@@ -373,7 +399,8 @@ export function registerPhase0Tools(deps: StubDeps): void {
   });
 
   defineToolFromRow(mustRow('alloy_replay'), async (input) => {
-    const client = await loadEngineAClient(requireEngineA(deps).engineA);
+    const d0 = input as { udid?: string };
+    const client = await loadEngineAClient(requireEngineA(deps).engineA, sessionForUdid(d0.udid));
     const d = input as { udid: string; scriptPath: string; timeoutMs?: number };
     const o: Record<string, unknown> = { path: d.scriptPath, udid: d.udid };
     if (d.timeoutMs !== undefined) o['timeoutMs'] = d.timeoutMs;
