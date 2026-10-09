@@ -45,7 +45,7 @@ export interface AClient {
     screenshot(options?: { udid?: string; outPath?: string }): Promise<unknown>;
   };
   interactions: {
-    press(options: { target: ATarget; udid?: string; settle?: boolean }): Promise<unknown>;
+    press(options: { target: ATarget; udid?: string; settle?: boolean; doubleTap?: boolean }): Promise<unknown>;
     longPress(options: { target: ATarget; udid?: string; durationMs?: number }): Promise<unknown>;
     fill(options: { target: ATarget; text: string; udid?: string; settle?: boolean }): Promise<unknown>;
     /** Hide the on-screen keyboard (engine-backed, device-independent). */

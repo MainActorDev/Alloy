@@ -193,16 +193,23 @@ export function registerPhase0Tools(deps: StubDeps): void {
       text?: string;
       direction?: 'up' | 'down' | 'left' | 'right';
       settle: boolean;
+      doubleTap?: boolean;
+      durationMs?: number;
     };
     if (d.action === 'keyboardDismiss') return client.interactions.keyboardDismiss({ udid: d.udid });
     if (d.action === 'scroll') {
       return client.interactions.scroll({ direction: d.direction!, udid: d.udid, settle: d.settle });
     }
     const target = toTarget(d.target as string | { x: number; y: number });
-    if (d.action === 'press') return client.interactions.press({ target, udid: d.udid, settle: d.settle });
+    if (d.action === 'press') {
+      const po: { target: typeof target; udid?: string; settle?: boolean; doubleTap?: boolean } = { target, udid: d.udid, settle: d.settle };
+      if (d.doubleTap !== undefined) po.doubleTap = d.doubleTap;
+      return client.interactions.press(po);
+    }
     if (d.action === 'longpress') {
-      const o: { target: typeof target; udid?: string } = { target };
+      const o: { target: typeof target; udid?: string; durationMs?: number } = { target };
       opt(o, 'udid', d.udid);
+      opt(o, 'durationMs', d.durationMs);
       return client.interactions.longPress(o);
     }
     return client.interactions.fill({ target, text: d.text!, udid: d.udid, settle: d.settle });

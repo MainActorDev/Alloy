@@ -148,6 +148,8 @@ export const routingTable: readonly RoutingRow[] = [
         text: z.string().optional().describe('text for fill'),
         direction: z.enum(['up', 'down', 'left', 'right']).optional(),
         settle: z.boolean().default(true),
+        doubleTap: z.boolean().optional().describe('press as a double-tap (engine A repeated-touch flag)'),
+        durationMs: z.number().int().positive().max(10_000).optional().describe('long-press dwell in ms'),
       })
       .strict()
       .superRefine((v, ctx) => {
